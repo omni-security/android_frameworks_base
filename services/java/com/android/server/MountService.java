@@ -677,7 +677,7 @@ class MountService extends IMountService.Stub
 
         // Tell PackageManager about changes to primary volume state, but only
         // when not emulated.
-        if (volume.isPrimary() && !volume.isEmulated()) {
+        if (volume.isExternalApps()) {
             if (Environment.MEDIA_UNMOUNTED.equals(state)) {
                 mPms.updateExternalMediaStatus(false, false);
 
@@ -1245,18 +1245,21 @@ class MountService extends IMountService.Stub
                     // resource parser does not support longs, so XML value is in megabytes
                     long maxFileSize = a.getInt(
                             com.android.internal.R.styleable.Storage_maxFileSize, 0) * 1024L * 1024L;
+                    boolean externalApps = a.getBoolean(
+                            com.android.internal.R.styleable.Storage_externalApps, false);
 
                     Slog.d(TAG, "got storage path: " + path + " description: " + description +
                             " primary: " + primary + " removable: " + removable +
                             " emulated: " + emulated +  " mtpReserve: " + mtpReserve +
                             " allowMassStorage: " + allowMassStorage +
-                            " maxFileSize: " + maxFileSize);
+                            " maxFileSize: " + maxFileSize +
+                            " externalApps: " + externalApps);
 
                     if (emulated) {
                         // For devices with emulated storage, we create separate
                         // volumes for each known user.
                         mEmulatedTemplate = new StorageVolume(null, descriptionId, true, false,
-                                true, mtpReserve, false, maxFileSize, null);
+                                true, mtpReserve, false, maxFileSize, null, externalApps);
 
                         final UserManagerService userManager = UserManagerService.getInstance();
                         for (UserInfo user : userManager.getUsers(false)) {
@@ -1269,7 +1272,7 @@ class MountService extends IMountService.Stub
                         } else {
                             final StorageVolume volume = new StorageVolume(new File(path),
                                     descriptionId, primary, removable, emulated, mtpReserve,
-                                    allowMassStorage, maxFileSize, null);
+                                    allowMassStorage, maxFileSize, null, externalApps);
                             addVolumeLocked(volume);
 
                             // Until we hear otherwise, treat as unmounted
@@ -1518,6 +1521,17 @@ class MountService extends IMountService.Stub
         }
         synchronized (mListeners) {
             return mUmsAvailable;
+        }
+    }
+
+    private boolean isExternalApps(String path) {
+        synchronized (mVolumesLock) {
+            for (StorageVolume volume : mVolumes) {
+                if (volume.isExternalApps() && volume.getPath().equals(path)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
