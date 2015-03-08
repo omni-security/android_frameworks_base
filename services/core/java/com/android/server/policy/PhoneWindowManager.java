@@ -6593,6 +6593,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     } else if (mContext.getPackageManager().hasSystemFeature(
                             PackageManager.FEATURE_TELEVISION)) {
                         theme = com.android.internal.R.style.Theme_Leanback_Dialog_Alert;
+                    } else if (SystemProperties.get("ro.product.board").equals("tuna")) {
+                        theme = com.android.internal.R.style.Theme_Material_Dialog_Alert;
                     } else {
                         theme = com.android.internal.R.style.Theme_Material_DayNight_Dialog_Alert;
                     }
